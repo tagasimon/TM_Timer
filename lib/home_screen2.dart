@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:tm_timer/widgets/results_widget.dart';
 
 class HomeScreen2 extends StatefulWidget {
   const HomeScreen2({super.key});
@@ -10,6 +11,11 @@ class HomeScreen2 extends StatefulWidget {
 }
 
 class HomeScreen2State extends State<HomeScreen2> {
+  final minsController = TextEditingController();
+  final speakerNameController = TextEditingController();
+  String? speakerName;
+  int speaker = 1;
+  final List<String> _list = [];
   int _totalTime = 0; // Duration in minutes to manipulate colors
   int _currentTime = 0; // Current time in seconds
   Timer? _timer;
@@ -57,8 +63,10 @@ class HomeScreen2State extends State<HomeScreen2> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Summary"),
-          content: Text("Time elapsed: $minutes minutes and $seconds seconds"),
-          actions: <Widget>[
+          content: Text(
+            "Time elapsed: $minutes minutes and $seconds seconds",
+          ),
+          actions: [
             TextButton(
               child: const Text("OK"),
               onPressed: () {
@@ -69,6 +77,9 @@ class HomeScreen2State extends State<HomeScreen2> {
         );
       },
     );
+    setState(() {});
+    _list.add(
+        "${speakerNameController.text}: $minutes minutes and $seconds seconds");
   }
 
   @override
@@ -82,66 +93,129 @@ class HomeScreen2State extends State<HomeScreen2> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('TM Timer App'),
-      ),
-      body: Container(
-        color: _backgroundColor,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Time elapsed: ${_currentTime ~/ 60} minutes and ${_currentTime % 60} seconds',
-                style: const TextStyle(fontSize: 24),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  final int? mins = await showDialog<int>(
-                    context: context,
-                    builder: (context) {
-                      final controller = TextEditingController();
-                      return AlertDialog(
-                        title: const Text("Enter duration in minutes"),
-                        content: TextFormField(
-                          controller: controller,
+        title: const Text('TM Time Keeper'),
+        centerTitle: true,
+        actions: [
+          OutlinedButton(
+            onPressed: () async {
+              final int? mins = await showDialog<int>(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text(
+                        "Enter duration in minutes and speaker name"),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: speakerNameController,
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(
+                            hintText: "Enter Speaker Name",
+                          ),
+                        ),
+                        TextFormField(
+                          controller: minsController,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
                             hintText: "Enter duration in minutes",
                           ),
                         ),
-                        actions: [
-                          TextButton(
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final int? mins = int.tryParse(minsController.text);
+                          Navigator.of(context).pop(mins);
+                        },
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (mins == null) return;
+              _totalTime = mins;
+              _startTimer();
+            },
+            child: const Icon(Icons.play_arrow),
+          ),
+          const SizedBox(width: 5),
+          OutlinedButton.icon(
+            onPressed: _stopTimerAndShowSummary,
+            icon: const Icon(Icons.stop),
+            label: const Text("Results"),
+          ),
+          // add a reset button here
+          const SizedBox(width: 5),
+          OutlinedButton(
+            onPressed: () {
+              if (_timer != null) {
+                _timer!.cancel();
+              }
+              setState(() {
+                _currentTime = 0;
+                _backgroundColor = Colors.white;
+              });
+            },
+            child: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'Time elapsed: ${_currentTime ~/ 60} minutes and ${_currentTime % 60} seconds',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium!
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const VerticalDivider(),
+          Expanded(
+            flex: 2,
+            child: _list.isEmpty
+                ? const Center(child: Text("No results yet"))
+                : ListView.builder(
+                    itemCount: _list.length,
+                    itemBuilder: (context, index) {
+                      return Card(
+                        child: ListTile(
+                          title: Text(_list[index]),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
                             onPressed: () {
-                              Navigator.of(context).pop();
+                              setState(() {
+                                _list.removeAt(index);
+                              });
                             },
-                            child: const Text("Cancel"),
                           ),
-                          TextButton(
-                            onPressed: () {
-                              final int? mins = int.tryParse(controller.text);
-                              Navigator.of(context).pop(mins);
-                            },
-                            child: const Text("OK"),
-                          ),
-                        ],
+                        ),
                       );
                     },
-                  );
-                  if (mins == null) return;
-                  _totalTime = mins;
-                  _startTimer();
-                },
-                child: const Text('Start Timer'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _stopTimerAndShowSummary,
-                child: const Text('End Results'),
-              ),
-            ],
-          ),
-        ),
+                  ),
+          )
+        ],
       ),
     );
   }

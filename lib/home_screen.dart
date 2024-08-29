@@ -56,6 +56,69 @@ class HomeScreen1State extends State<HomeScreen1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final double? mins = await showDialog<double>(
+                context: context,
+                builder: (context) {
+                  final controller = TextEditingController();
+                  return AlertDialog(
+                    title: const Text("Enter duration in minutes"),
+                    content: TextFormField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        hintText: "Enter duration in minutes",
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final double? mins = double.tryParse(controller.text);
+                          Navigator.of(context).pop(mins);
+                        },
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (mins != null) {
+                _totalTime = (mins * 60).toInt();
+              }
+              _startTimer();
+            },
+            icon: const Icon(Icons.play_arrow),
+          ),
+          IconButton(
+            onPressed: () {
+              if (_timer != null) {
+                _timer!.cancel();
+              }
+            },
+            icon: const Icon(Icons.stop),
+          ),
+          // add reset button here
+          IconButton(
+              onPressed: () {
+                if (_timer != null) {
+                  _timer!.cancel();
+                }
+                setState(() {
+                  _currentTime = 0;
+                });
+              },
+              icon: const Icon(Icons.replay)),
+        ],
+      ),
       backgroundColor: _backgroundColor,
       body: Center(
         child: Column(
@@ -63,64 +126,7 @@ class HomeScreen1State extends State<HomeScreen1> {
           children: [
             Text(
               'Time remaining: $_currentTime Seconds',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    final double? mins = await showDialog<double>(
-                      context: context,
-                      builder: (context) {
-                        final controller = TextEditingController();
-                        return AlertDialog(
-                          title: const Text("Enter duration in minutes"),
-                          content: TextFormField(
-                            controller: controller,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: "Enter duration in minutes",
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text("Cancel"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                final double? mins =
-                                    double.tryParse(controller.text);
-                                Navigator.of(context).pop(mins);
-                              },
-                              child: const Text("OK"),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                    if (mins != null) {
-                      _totalTime = (mins * 60).toInt();
-                    }
-                    _startTimer();
-                  },
-                  child: const Text('Start Timer'),
-                ),
-                // Add a button to stop the timer
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_timer != null) {
-                      _timer!.cancel();
-                    }
-                  },
-                  child: const Text('Stop Timer'),
-                ),
-              ],
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),

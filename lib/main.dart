@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tm_timer/home_screen.dart';
 import 'package:tm_timer/home_screen2.dart';
 
 void main() {
@@ -18,7 +17,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomeScreen2(),
+      home: const HomeScreen2(),
     );
   }
 }
