@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:tm_timer/widgets/results_widget.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class HomeScreen2 extends StatefulWidget {
   const HomeScreen2({super.key});
@@ -11,6 +11,7 @@ class HomeScreen2 extends StatefulWidget {
 }
 
 class HomeScreen2State extends State<HomeScreen2> {
+  final key = GlobalKey<FormState>();
   final minsController = TextEditingController();
   final speakerNameController = TextEditingController();
   String? speakerName;
@@ -50,6 +51,75 @@ class HomeScreen2State extends State<HomeScreen2> {
     });
   }
 
+  Future<void> _startTimerAction() async {
+    final int? mins = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Enter duration in minutes and speaker name"),
+          content: Form(
+            key: key,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: speakerNameController,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    hintText: "Enter Speaker Name",
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter speaker name";
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: minsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: "Enter duration in minutes",
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter duration in minutes";
+                    }
+                    if (int.tryParse(value) == null) {
+                      return "Please enter a valid number";
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (!key.currentState!.validate()) {
+                  return;
+                }
+                final int? mins = int.tryParse(minsController.text);
+                Navigator.of(context).pop(mins);
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+    if (mins == null) return;
+    _totalTime = mins;
+    _startTimer();
+  }
+
   void _stopTimerAndShowSummary() {
     if (_timer != null) {
       _timer!.cancel();
@@ -57,29 +127,24 @@ class HomeScreen2State extends State<HomeScreen2> {
 
     int minutes = _currentTime ~/ 60;
     int seconds = _currentTime % 60;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Summary"),
-          content: Text(
-            "Time elapsed: $minutes minutes and $seconds seconds",
-          ),
-          actions: [
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+    Fluttertoast.showToast(
+      msg:
+          "Speaker $speaker: $minutes minutes and $seconds seconds of $_totalTime minutes",
+      toastLength: Toast.LENGTH_LONG,
     );
     setState(() {});
     _list.add(
-        "${speakerNameController.text}: $minutes minutes and $seconds seconds");
+        "${speakerNameController.text}: $minutes minutes and $seconds seconds of $_totalTime minutes");
+  }
+
+  void resetTimer() {
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    setState(() {
+      _currentTime = 0;
+      _backgroundColor = Colors.white;
+    });
   }
 
   @override
@@ -97,55 +162,8 @@ class HomeScreen2State extends State<HomeScreen2> {
         centerTitle: true,
         actions: [
           OutlinedButton(
-            onPressed: () async {
-              final int? mins = await showDialog<int>(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: const Text(
-                        "Enter duration in minutes and speaker name"),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          controller: speakerNameController,
-                          keyboardType: TextInputType.text,
-                          decoration: const InputDecoration(
-                            hintText: "Enter Speaker Name",
-                          ),
-                        ),
-                        TextFormField(
-                          controller: minsController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            hintText: "Enter duration in minutes",
-                          ),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text("Cancel"),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          final int? mins = int.tryParse(minsController.text);
-                          Navigator.of(context).pop(mins);
-                        },
-                        child: const Text("OK"),
-                      ),
-                    ],
-                  );
-                },
-              );
-              if (mins == null) return;
-              _totalTime = mins;
-              _startTimer();
-            },
-            child: const Icon(Icons.play_arrow),
+            onPressed: _startTimerAction,
+            child: const Icon(Icons.add),
           ),
           const SizedBox(width: 5),
           OutlinedButton.icon(
@@ -153,18 +171,9 @@ class HomeScreen2State extends State<HomeScreen2> {
             icon: const Icon(Icons.stop),
             label: const Text("Results"),
           ),
-          // add a reset button here
           const SizedBox(width: 5),
           OutlinedButton(
-            onPressed: () {
-              if (_timer != null) {
-                _timer!.cancel();
-              }
-              setState(() {
-                _currentTime = 0;
-                _backgroundColor = Colors.white;
-              });
-            },
+            onPressed: resetTimer,
             child: const Icon(Icons.refresh),
           ),
         ],
@@ -181,7 +190,7 @@ class HomeScreen2State extends State<HomeScreen2> {
                     'Time elapsed: ${_currentTime ~/ 60} minutes and ${_currentTime % 60} seconds',
                     style: Theme.of(context)
                         .textTheme
-                        .labelMedium!
+                        .labelLarge!
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
